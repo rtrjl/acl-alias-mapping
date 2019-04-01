@@ -1,0 +1,35 @@
+module location {
+    namespace "http://com/example/location";
+    prefix location;
+    import ietf-inet-types { prefix inet; }
+    import tailf-ncs { prefix ncs; }
+
+    list location {
+        key device;
+        uses ncs:service-data;
+        ncs:servicepoint "location";
+
+    leaf device {
+        type leafref {
+        path "/ncs:devices/ncs:device/ncs:name";
+        }
+    }
+
+    leaf address {
+        type string;
+        mandatory true;
+    }
+
+    leaf latitude {
+        type string;
+    }
+
+    leaf longitude {
+        type string;
+    }
+
+    leaf note {
+        type string;
+    }
+    }
+}

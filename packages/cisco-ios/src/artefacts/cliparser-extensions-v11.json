@@ -1,0 +1,31 @@
+{
+  "contexts": {
+    "/": {
+      "imports": {}, 
+      "namespace": "http://tail-f.com/ned/cliparser_v11", 
+      "module": "cliparser-extensions-v11", 
+      "prefix": "cli", 
+      "module_meta": [], 
+      "extensions": {
+        "context-value-inject": {
+          "direction": "from-device", 
+          "state": "enter-context", 
+          "java-callback-method": "com.tailf.packages.ned.nedcom.NedComCliExtensions.contextValueInject"
+        }, 
+        "shutdown-before-edit": {
+          "direction": "to-device", 
+          "state": "post-match", 
+          "java-callback-method": "com.tailf.packages.ned.nedcom.NedComCliExtensions.shutdownBeforeEdit"
+        }, 
+        "globally-unique-value": {
+          "direction": "to-device", 
+          "state": "post-match", 
+          "java-callback-method": "com.tailf.packages.ned.nedcom.NedComCliExtensions.globallyUniqueValue"
+        }
+      }
+    }
+  }, 
+  "nodes": {}, 
+  "cli": "true", 
+  "types": {}
+}

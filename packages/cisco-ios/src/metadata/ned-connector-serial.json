@@ -1,0 +1,48 @@
+{
+    "pattern" : {
+        "promptDevice" :   "\\A[^\\# ]+>[ ]?$",
+        "promptPriv" :     "\\A[^\\# ]+#[ ]?$",
+        "promptLogin" :    "^.*([Ll]ogin|[Uu]ser|[Uu]sername):[ ]?$",
+        "promptPassword" : "^.*[Pp]assword:[ ]?$",
+        "promptMenu" :     "$(proxy/menu/regexp)",
+        "promptIgnore" :   "([Pp]assword OK)|([Ll]ast [Ll]ogin)|(User Access Verification)",
+        "errorLogin" :     "(Authentication failed)|(Bad passwords)|(Login invalid)|(Access denied)|(Permission denied)|(Request Denied)",
+        "errorEnable" :    "(Unknown command)|(Access denied)"
+    },
+    "command" : {
+        "menuCmd" : "noecho($(proxy/menu/answer))"
+    },
+    "state": {
+        "new" : [
+            {"expect": null, "action": "connect($(connection/terminal/width),$(connection/terminal/height))", "nextState": "newline"}
+        ],
+        "newline" : [
+            {"expect": null,               "action": "\r\n",  "nextState": "login"}
+        ],
+        "login" : [
+            {"expect": "$promptIgnore",     "action": null,             "nextState": "login"},
+            {"expect": "$promptLogin",      "action": "sendUsername()", "nextState": "login"},
+            {"expect": "$promptPassword",   "action": "password($(remote-password))", "nextState": "newline2"},
+            {"expect": "$promptMenu",       "action": "$menuCmd",        "nextState": "login"},
+            {"expect": "$promptDevice",     "action": "enable",         "nextState": "enable"},
+            {"expect": "$promptPriv",       "action": null,             "nextState": "end"},
+            {"expect": "$errorLogin",       "action": "reportError()",  "nextState": "invalid"}
+        ],
+        "newline2" : [
+            {"expect": null,               "action": "\r\n",  "nextState": "login2"}
+        ],
+        "login2" : [
+            {"expect": "$promptIgnore",     "action": null,             "nextState": "login2"},
+            {"expect": "$promptLogin",      "action": "$(proxy/remote-name)",               "nextState": "login2"},
+            {"expect": "$promptPassword",   "action": "password($(proxy/remote-password))", "nextState": "login2"},
+            {"expect": "$promptDevice",     "action": "enable",         "nextState": "enable"},
+            {"expect": "$promptPriv",       "action": null,             "nextState": "end"},
+            {"expect": "$errorLogin",       "action": "reportError()",  "nextState": "invalid"}
+        ],
+        "enable" : [
+            {"expect": "$promptPriv",       "action": null,                      "nextState": "end"},
+            {"expect": "$promptPassword",   "action": "sendSecondaryPassword()", "nextState": "enable"},
+            {"expect": "$errorEnable",      "action": "reportError()",           "nextState": "invalid"}
+        ]
+    }
+}
