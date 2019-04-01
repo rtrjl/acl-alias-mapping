@@ -1,0 +1,1 @@
+{"virtualbox":{"/home/vagrant/ncs-run/packages":{"guestpath":"/home/vagrant/ncs-run/packages","hostpath":"C:/Users/rodtruji/PycharmProjects/acl-alias-mapping/packages","disabled":false,"__vagrantfile":true},"/vagrant":{"guestpath":"/vagrant","hostpath":"C:/Users/rodtruji/PycharmProjects/acl-alias-mapping/vagrantbox","disabled":false,"__vagrantfile":true}}}
