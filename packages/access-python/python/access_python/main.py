@@ -26,6 +26,7 @@ class ServiceCallbacks(Service):
         if not vlan:
             self.log.info("VLAN not ready")
             return
+
         service.vlan = vlan
 
         custom_interface_description = root.location__location[
