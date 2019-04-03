@@ -1,0 +1,135 @@
+module l2vpn {
+    namespace "http://cisco.com/adt/ct-in-nso-dev/l2vpn";
+    prefix l2vpn;
+    import ietf-inet-types {
+        prefix inet;
+    }
+    import tailf-common {
+        prefix tailf;
+    }
+    import tailf-ncs {
+        prefix ncs;
+    }
+// To reference to another yang model, the module must be imported.
+// Inside the local file, the modul will be referenced using the prefix
+    import qos {
+        prefix qos;
+    }
+    description
+      "Complete Development Training for NSO: L2VPN service";
+    revision 2016-10-09 {
+        description
+          "L2VPN Simple";
+    }
+// YANG RFC contains multiple predefined types like uint8, uint16, uint32, string, etc.
+// New types can be defined based on the existing onces.
+// Here we define a new type vc-range which based on uint32
+// but has a lower and upper bound
+    typedef vc-range {
+        type uint32 {
+            range "10000..20000";
+        }
+    }
+    typedef vlan-range {
+        type uint32 {
+            range "100..300";
+        }
+    }
+// A grouping contains a structure that can be re-used multiple times in multiple
+// places of the module
+    grouping device-config {
+        leaf device-id {
+            mandatory true;
+            tailf:info "Device name. The device must be configured by a QoS service";
+// We don't reference to the general NSO device list.
+// We want to reference only devices that are configured by the QoS service instance
+// Thus, we give the path of the device leaf-list of a qos service instance.
+// The service instance ID should also given. Lower in the yang model you will find it refenced, as well.
+            type leafref {
+                path "/qos:qos[qos:service-id=current()/../../link/qos-service-id]/qos:device";
+            }
+        }
+        leaf interface-id {
+            tailf:info "Interface ID";
+            mandatory true;
+            type string;
+        }
+        leaf ip-address {
+            tailf:info "Interface IP address";
+            mandatory true;
+// The module ietf-inet-types with prefix "inet" contains standardised network types like ipv4
+//and ipv6 addresses.
+            type inet:ipv4-address;
+        }
+        leaf instance-id {
+            tailf:info "Ethernet service instance ID";
+            mandatory true;
+            type uint32;
+        }
+        leaf vlan-id {
+            tailf:info "VLAN ID";
+// vlan-range is a locally defined type. Thus, prefix usage like in inet:ipv4-address is not
+//mandatory.
+            type vlan-range;
+        }
+    }
+    list l2vpn {
+        description
+          "This is an RFS skeleton service";
+        key service-id;
+        leaf service-id {
+            tailf:info "Unique service ID";
+            tailf:cli-allow-range;
+            type string;
+        }
+        uses ncs:service-data;
+// l2vpn-servicepoint points to a python class
+        ncs:servicepoint l2vpn-servicepoint;
+        container access-device {
+// This container can be configured only WHEN link/qos-service-id is defined
+            when "../link/qos-service-id";
+            tailf:info "L2VPN access PE config";
+// grouping "device-config" is loaded here
+            uses device-config;
+        }
+        container delivery-device {
+            tailf:info "L2VPN delivery PE config";
+            when "../access-device";
+// grouping "device-config" is loaded here
+// several changes are required. Using the keyword "refine"
+// an element property inside the original grouping can be modified
+            uses device-config {
+                refine vlan-id {
+// "must" is a conditition. Here we check if access-device and delivery-device have the
+//same VLAN ID configured
+                    must "current()=../../access-device/vlan-id";
+                }
+                refine device-id {
+// "must" is a conditition. Here we check if access-device is different from delviry-device
+                    must "current()!=../../access-device/device-id";
+                }
+            }
+        }
+
+        container link {
+            tailf:info "L2VPN link config";
+            leaf vc-id {
+                tailf:info "Virtual Circuit ID";
+                mandatory true;
+                type vc-range;
+            }
+            leaf vc-class {
+                tailf:info "Virtual Circuit class";
+                mandatory true;
+                type string;
+            }
+            leaf qos-service-id {
+                tailf:info "QoS service instance ID";
+// Referencing a QoS service instance
+                type leafref {
+                    path "/qos:qos/qos:service-id";
+                }
+            }
+        }
+    }
+}

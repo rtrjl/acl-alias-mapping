@@ -1,0 +1,64 @@
+module acl-alias-mapping {
+
+  namespace "http://example.com/acl-alias-mapping";
+  prefix acl-alias-mapping;
+
+  import ietf-inet-types {
+    prefix inet;
+  }
+  import tailf-common {
+    prefix tailf;
+  }
+  import tailf-ncs {
+    prefix ncs;
+  }
+
+  description
+    "Bla bla...";
+
+  revision 2016-01-01 {
+    description
+      "Initial revision.";
+  }
+
+
+
+    container acl-alias-mapping{
+    list acs-alias-entry{
+        key port;
+        leaf port{
+        type uint16;
+        }
+        leaf alias{
+        type string;
+        }
+    }
+    tailf:action run-acl-alias-mapping {
+      tailf:actionpoint acl-alias-mapping;
+      input {
+        leaf device {
+        mandatory true;
+        type leafref{
+        path "/ncs:devices/ncs:device/ncs:name";
+        }
+        }
+      }
+      output {
+        leaf result{
+        type string;
+        }
+        list acl-maping{
+            key port;
+            leaf port{
+            type uint16;
+            }
+            leaf protocol{
+            type string;
+            }
+        }
+
+
+      }
+    }
+    }
+}

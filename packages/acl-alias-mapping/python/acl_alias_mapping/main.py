@@ -1,47 +1,34 @@
 # -*- mode: python; python-indent: 4 -*-
-import ncs
-from ncs.application import Service
-import resource_manager.id_allocator as id_allocator
+import ncs, re
+from ncs.dp import Action
+
 
 # ------------------------
 # SERVICE CALLBACK EXAMPLE
 # ------------------------
-class ServiceCallbacks(Service):
+class ServiceCallbacks(Action):
 
     # The create() callback is invoked inside NCS FASTMAP and
     # must always exist.
-    @Service.create
-    def cb_create(self, tctx, root, service, proplist):
-        self.log.info("Service create(service=", service._path, ")")
+    @Action.action
+    def cb_action(self, uinfo, name, kp, input, output):
+        with ncs.maapi.Maapi() as m:
+            with ncs.maapi.Session(m, "admin", "python"):
+                with m.start_write_trans() as t:
+                    root = ncs.maagic.get_root(t)
+                    device = root.devices.device[input.device]
+                    input_test = device.config.ios__EXEC["exec"].get_input()
+                    input_test.args = ["access-list 199 permit tcp any any eq ?"]
+                    result_test = device.config.ios__EXEC["exec"](input_test)
+                    # todo put
 
-        id_allocator.id_request(
-            service,
-            "/access-python[customer='%s']" % (service.customer),
-            tctx.username,
-            "vlans",
-            service.customer,
-            False,
-        )
-        vlan = id_allocator.id_read(tctx.username, root, "vlans", service.customer)
-        if not vlan:
-            self.log.info("VLAN not ready")
-            return
-
-        service.vlan = vlan
-
-        custom_interface_description = root.location__location[
-            service.device
-        ].location__address
-        self.log.info(
-            "custom_interface_description : {}".format(custom_interface_description)
-        )
-        template_vars = ncs.template.Variables()
-        template_vars.add("VLAN", vlan)
-        template_vars.add("ACCESS_GE_INTERFACE", service.access_ge_interface)
-        template_vars.add("TRUNK_GE_INTERFACE", service.trunk_ge_interface)
-        template_vars.add("ACCESS_INT_DESCRIPTION", custom_interface_description)
-        template = ncs.template.Template(service)
-        template.apply("access-python-template", template_vars)
+                    regex = r"^\s+(\S+)\s+.+\((\d+)"
+                    matches = re.finditer(regex, result_test.result, re.MULTILINE)
+                    output.acl_maping.create()
+                    for match in matches:
+                        my_acl = output.acl_maping.create(int(match.group(2)))
+                        my_acl.protocol = match.group(1)
+                    t.apply()
 
     # The pre_modification() and post_modification() callbacks are optional,
     # and are invoked outside FASTMAP. pre_modification() is invoked before
@@ -77,7 +64,7 @@ class Main(ncs.application.Application):
         # Service callbacks require a registration for a 'service point',
         # as specified in the corresponding data model.
         #
-        self.register_service("access-python-servicepoint", ServiceCallbacks)
+        self.register_action("acl-alias-mapping", ServiceCallbacks)
 
         # If we registered any callback(s) above, the Application class
         # took care of creating a daemon (related to the service/action point).
